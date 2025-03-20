@@ -69,7 +69,7 @@ with open("prompts.yaml", 'r') as stream:
     
 agent = CodeAgent(
     model=model,
-    tools=[final_answer, web_search, visit_webpage, get_current_time_in_timezone],
+    tools=[final_answer, web_search, visit_webpage, get_current_time_in_timezone, conversational_utterance],
     max_steps=6,
     verbosity_level=1,
     grammar=None,
