@@ -86,41 +86,4 @@ agent = CodeAgent(
     prompt_templates=prompt_templates
 )
 
-custom_css = """
-/* Apply a nice background gradient to the whole page */
-body {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    font-family: 'Roboto', sans-serif;
-}
-
-/* Style the main container with a border, padding, and shadow */
-.gradio-container {
-    border: 2px solid #ffffff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-}
-
-/* Example: style all headings inside the container */
-.gradio-container h1,
-.gradio-container h2,
-.gradio-container h3 {
-    color: #ffffff;
-}
-
-/* Customize buttons appearance */
-button {
-    background-color: #4A90E2;
-    border: none;
-    border-radius: 5px;
-    color: white;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-button:hover {
-    background-color: #357ABD;
-}
-"""
-GradioUI(agent).launch(css=custom_css)
+GradioUI(agent).launch()
