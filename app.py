@@ -43,7 +43,7 @@ def conversational_utterance(user_content:str)-> str:
     messages = [
       {"role": "user", "content": [{"type": "text", "text": user_content}]}
     ]
-    return model(messages)
+    return model(messages).content
 
 
 final_answer = FinalAnswerTool()
