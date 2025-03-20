@@ -8,7 +8,7 @@ from tools.visit_webpage import VisitWebpageTool
 
 from Gradio_UI import GradioUI
 
-# Below is an example of a tool that does nothing. Amaze us with your creativity !
+
 @tool
 def my_custom_tool(arg1:str, arg2:int)-> str: #it's import to specify the return type
     #Keep this format for the description / args / args description but feel free to modify the tool
@@ -34,6 +34,17 @@ def get_current_time_in_timezone(timezone: str) -> str:
     except Exception as e:
         return f"Error fetching time for timezone '{timezone}': {str(e)}"
 
+@tool
+def conversational_utterance(user_content:str)-> str:
+    """A tool that replies to a single casual query or message that does not require any other tool to be triggered
+    Args:
+        user_content: the message or query such as 'Hi!', 'How are you?', 'What are you?', 'tell me a joke'
+    """
+    messages = [
+      {"role": "user", "content": [{"type": "text", "text": user_content}]}
+    ]
+    return model(messages)
+
 
 final_answer = FinalAnswerTool()
 web_search = DuckDuckGoSearchTool()
@@ -58,7 +69,7 @@ with open("prompts.yaml", 'r') as stream:
     
 agent = CodeAgent(
     model=model,
-    tools=[final_answer, web_search, visit_webpage], ## add your tools here (don't remove final answer)
+    tools=[final_answer, web_search, visit_webpage, get_current_time_in_timezone],
     max_steps=6,
     verbosity_level=1,
     grammar=None,
