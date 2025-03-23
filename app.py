@@ -75,7 +75,7 @@ translation_model_name = "facebook/nllb-200-distilled-600M"
 translation_tool = load_tool(
     "smolagents-tools/translation", 
     model_repo_id=translation_model_name, 
-    revision="pytorch_model.bin",
+    revision="facebook/nllb-200-distilled-600M/pytorch_model.bin",
     default_checkpoint="pytorch_model.bin", 
     trust_remote_code=True
 )
