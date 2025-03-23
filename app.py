@@ -102,7 +102,7 @@ agent = CodeAgent(
         language_detection,
         translation_tool
     ],
-    max_steps=6,
+    max_steps=20,
     verbosity_level=1,
     grammar=None,
     planning_interval=None,
