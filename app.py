@@ -50,7 +50,7 @@ def conversational_utterance(user_content:str)-> str:
 
 @tool
 def language_detection(text:str)-> str:
-    """Detects the language of the input text.
+    """Detects the language of the input text using basic xlm-roberta-base-language-detection.
      Args:
         text: the input message or wording to detect language from.
     """
@@ -61,12 +61,18 @@ def language_detection(text:str)-> str:
         pred = preds[0]
         language_probabilities_dict = {p["label"]: float(p["score"]) for p in pred}
         predicted_language_code = max(language_probabilities_dict, key=language_probabilities_dict.get)
-        predicted_language_code_str = f"Predicted language code: {predicted_language_code}"
+        tool_prediction_confidence = language_probabilities_dict[predicted_language_code]
+        confidence_str = f"Tool Confidence: {tool_prediction_confidence}"
+        predicted_language_code_str = f"Predicted language code (ISO 639): {predicted_language_code}/n{confidence_str}"
         try:
             predicted_language = pycountry.languages.get(alpha_2=predicted_language_code)
-            return language.name if language else predicted_language_code_str
-        except Exception as e:
+            if predicted_language:
+                predicted_language_str = f"Predicted language: {predicted_language.name}/n{confidence_str}"
+                return predicted_language_str 
             return predicted_language_code_str
+            
+        except Exception as e:
+            return f"Error mapping country code to name (pycountry): {str(e)}/n{predicted_language_code_str}"
     else:
         return "None"
 
