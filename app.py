@@ -1,4 +1,11 @@
-from smolagents import CodeAgent,DuckDuckGoSearchTool, HfApiModel,load_tool,tool
+from smolagents import (
+    CodeAgent,
+    DuckDuckGoSearchTool,
+    GoogleSearchTool,
+    HfApiModel,
+    load_tool,
+    tool
+)
 import datetime
 import requests
 import pytz
@@ -47,7 +54,7 @@ def conversational_utterance(user_content:str)-> str:
 
 
 final_answer = FinalAnswerTool()
-web_search = DuckDuckGoSearchTool()
+web_search = GoogleSearchTool()  # DuckDuckGoSearchTool()
 visit_webpage = VisitWebpageTool()
 
 # If the agent does not answer, the model is overloaded, please use another model or the following Hugging Face Endpoint that also contains qwen2.5 coder:
@@ -62,8 +69,8 @@ custom_role_conversions=None,
 
 
 # Import tool from Hub
-image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)
-translation_tool = load_tool("translation", trust_remote_code=True)  # TranslationTool
+image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)  # https://huggingface.co/spaces/agents-course/text-to-image
+translation_tool = load_tool("smolagents-tools/translation", trust_remote_code=True)
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
@@ -77,7 +84,7 @@ agent = CodeAgent(
         get_current_time_in_timezone, 
         conversational_utterance, 
         image_generation_tool,
-        translation_tool
+        # translation_tool
     ],
     max_steps=6,
     verbosity_level=1,
