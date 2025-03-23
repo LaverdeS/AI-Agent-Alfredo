@@ -5,3 +5,4 @@ duckduckgo_search
 pandas
 transformers
 torch
+smolagents[transformers]
