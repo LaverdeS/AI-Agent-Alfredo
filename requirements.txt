@@ -4,3 +4,4 @@ requests
 duckduckgo_search
 pandas
 transformers
+torch
