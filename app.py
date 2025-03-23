@@ -1,3 +1,15 @@
+import datetime
+import requests
+import pytz
+import yaml
+
+from tools.final_answer import FinalAnswerTool
+from tools.visit_webpage import VisitWebpageTool
+from tools.translation import TranslationTool
+
+from transformers import pipeline
+from Gradio_UI import GradioUI
+
 from smolagents import (
     CodeAgent,
     DuckDuckGoSearchTool,
@@ -6,15 +18,6 @@ from smolagents import (
     load_tool,
     tool
 )
-import datetime
-import requests
-import pytz
-import yaml
-from tools.final_answer import FinalAnswerTool
-from tools.visit_webpage import VisitWebpageTool
-from tools.translation import TranslationTool
-
-from Gradio_UI import GradioUI
 
 
 @tool
@@ -34,9 +37,9 @@ def get_current_time_in_timezone(timezone: str) -> str:
 
 @tool
 def conversational_utterance(user_content:str)-> str:
-    """A tool that replies to a single casual query or message that does not require any other tool to be triggered
+    """A tool that replies to a single casual query or message that does not require any other tool to be triggered.
     Args:
-        user_content: the message or query such as 'Hi!', 'How are you?', 'What are you?', 'tell me a joke'
+        user_content: the message or query such as 'Hi!', 'How are you?', 'What are you?', 'tell me a joke'.
     """
     messages = [
       {"role": "user", "content": [{"type": "text", "text": user_content}]}
@@ -44,14 +47,32 @@ def conversational_utterance(user_content:str)-> str:
     return model(messages).content
 
 
+@tool
+def language_detection(text:str)-> str:
+    """Detects the language of the input text.
+     Args:
+        text: the input message or wording to detect language from.
+    """
+    model_ckpt = "papluca/xlm-roberta-base-language-detection"
+    pipe = pipeline("text-classification", model=model_ckpt)
+    preds = pipe(text, return_all_scores=True, truncation=True, max_length=128)
+    if preds:
+        pred = preds[0]
+        return str({p["label"]: float(p["score"]) for p in pred})
+    else:
+        return "None"
+
+# tools from /tools/
 final_answer = FinalAnswerTool()
-prefered_web_search = GoogleSearchTool()
-alternative_web_search = DuckDuckGoSearchTool()
 visit_webpage = VisitWebpageTool()
 translation_tool = TranslationTool()
 
-# If the agent does not answer, the model is overloaded, please use another model or the following Hugging Face Endpoint that also contains qwen2.5 coder:
-# model_id='https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud' 
+# tools from smoloagents library
+prefered_web_search = GoogleSearchTool()
+alternative_web_search = DuckDuckGoSearchTool()
+
+# tools from Hub
+image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)
 
 model = HfApiModel(
 max_tokens=2096,
@@ -60,9 +81,8 @@ model_id='Qwen/Qwen2.5-Coder-32B-Instruct',# it is possible that this model may 
 custom_role_conversions=None,
 )
 
-# Import tool from Hub
-image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)
-language_detection_tool = load_tool("team-language-detector/LanguageDetector", trust_remote_code=True)
+# If the agent does not answer, the model is overloaded, please use another model or the following Hugging Face Endpoint that also contains qwen2.5 coder:
+# model_id='https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud' 
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
@@ -77,7 +97,7 @@ agent = CodeAgent(
         get_current_time_in_timezone, 
         conversational_utterance, 
         image_generation_tool,
-        language_detection_tool,
+        language_detection,
         translation_tool
     ],
     max_steps=6,
