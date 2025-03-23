@@ -12,6 +12,7 @@ import pytz
 import yaml
 from tools.final_answer import FinalAnswerTool
 from tools.visit_webpage import VisitWebpageTool
+from tools.translation import TranslationTool
 
 from Gradio_UI import GradioUI
 
@@ -56,6 +57,7 @@ def conversational_utterance(user_content:str)-> str:
 final_answer = FinalAnswerTool()
 web_search = GoogleSearchTool()  # DuckDuckGoSearchTool()
 visit_webpage = VisitWebpageTool()
+translation_tool = TranslationTool()
 
 # If the agent does not answer, the model is overloaded, please use another model or the following Hugging Face Endpoint that also contains qwen2.5 coder:
 # model_id='https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud' 
@@ -67,18 +69,8 @@ model_id='Qwen/Qwen2.5-Coder-32B-Instruct',# it is possible that this model may 
 custom_role_conversions=None,
 )
 
-
 # Import tool from Hub
 image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)  # https://huggingface.co/spaces/agents-course/text-to-image
-
-translation_model_name = "facebook/nllb-200-distilled-600M"
-translation_tool = load_tool(
-    "smolagents-tools/translation", 
-    model_repo_id=translation_model_name, 
-    revision="facebook/nllb-200-distilled-600M/pytorch_model.bin",
-    default_checkpoint="pytorch_model.bin", 
-    trust_remote_code=True
-)
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
@@ -92,7 +84,7 @@ agent = CodeAgent(
         get_current_time_in_timezone, 
         conversational_utterance, 
         image_generation_tool,
-        # translation_tool
+        translation_tool
     ],
     max_steps=6,
     verbosity_level=1,
