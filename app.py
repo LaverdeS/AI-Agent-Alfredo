@@ -69,7 +69,9 @@ translation_tool = TranslationTool()
 
 # tools from smoloagents library
 prefered_web_search = GoogleSearchTool()
+prefered_web_search.name = "preferred_web_search"
 alternative_web_search = DuckDuckGoSearchTool()
+alternative_web_search.name = "alternative_web_search"
 
 # tools from Hub
 image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)
