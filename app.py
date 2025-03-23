@@ -70,7 +70,9 @@ custom_role_conversions=None,
 
 # Import tool from Hub
 image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)  # https://huggingface.co/spaces/agents-course/text-to-image
-translation_tool = load_tool("smolagents-tools/translation", model_repo_id="facebook/nllb-200-distilled-600M", trust_remote_code=True)
+
+translation_model_name = "facebook/nllb-200-distilled-600M"
+translation_tool = load_tool("smolagents-tools/translation", model_repo_id=translation_model_name, default_checkpoint=translation_model_name, trust_remote_code=True)
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
