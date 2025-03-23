@@ -75,8 +75,8 @@ translation_model_name = "facebook/nllb-200-distilled-600M"
 translation_tool = load_tool(
     "smolagents-tools/translation", 
     model_repo_id=translation_model_name, 
-    revision="f8d333a098d19b4fd9a8b18f94170487ad3f821d",
-    default_checkpoint=translation_model_name, 
+    revision="4942f357c5e13a13c1bb47c771c3843be02be308",
+    default_checkpoint="pytorch_model.bin", 
     trust_remote_code=True
 )
 
