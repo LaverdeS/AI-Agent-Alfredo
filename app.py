@@ -2,6 +2,7 @@ import datetime
 import requests
 import pytz
 import yaml
+import pycountry
 
 from tools.final_answer import FinalAnswerTool
 from tools.visit_webpage import VisitWebpageTool
@@ -58,9 +59,17 @@ def language_detection(text:str)-> str:
     preds = pipe(text, return_all_scores=True, truncation=True, max_length=128)
     if preds:
         pred = preds[0]
-        return str({p["label"]: float(p["score"]) for p in pred})
+        language_probabilities_dict = {p["label"]: float(p["score"]) for p in pred}
+        predicted_language_code = max(language_probabilities_dict, key=language_probabilities_dict.get)
+        predicted_language_code_str = f"Predicted language code: {predicted_language_code}"
+        try:
+            predicted_language = pycountry.languages.get(alpha_2=predicted_language_code)
+            return language.name if language else predicted_language_code_str
+        except Exception as e:
+            return predicted_language_code_str
     else:
         return "None"
+
 
 # tools from /tools/
 final_answer = FinalAnswerTool()
