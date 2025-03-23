@@ -4,5 +4,6 @@ requests
 duckduckgo_search
 pandas
 transformers
+smolagents[transformers]
 torch
 pycountry
