@@ -63,6 +63,7 @@ custom_role_conversions=None,
 
 # Import tool from Hub
 image_generation_tool = load_tool("agents-course/text-to-image", trust_remote_code=True)
+translation_tool = load_tool("translation", trust_remote_code=True)  # TranslationTool
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
@@ -75,7 +76,8 @@ agent = CodeAgent(
         visit_webpage, 
         get_current_time_in_timezone, 
         conversational_utterance, 
-        image_generation_tool
+        image_generation_tool,
+        translation_tool
     ],
     max_steps=6,
     verbosity_level=1,
