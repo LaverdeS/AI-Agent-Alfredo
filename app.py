@@ -8,7 +8,6 @@ from smolagents import (
 )
 import datetime
 import requests
-import transformers
 import pytz
 import yaml
 from tools.final_answer import FinalAnswerTool
