@@ -10,6 +10,7 @@ from tools.translation import TranslationTool
 
 from transformers import pipeline
 from Gradio_UI import GradioUI
+from typing import Optional
 
 from smolagents import (
     CodeAgent,
@@ -25,7 +26,7 @@ from smolagents import (
 def get_current_time_in_timezone(timezone: str) -> str:
     """A tool that fetches the current local time in a specified timezone.
     Args:
-        timezone: A string representing a valid timezone (e.g., 'America/New_York').
+        timezone (str): A string representing a valid timezone (e.g., 'America/New_York').
     """
     try:
         # Create timezone object
@@ -37,13 +38,27 @@ def get_current_time_in_timezone(timezone: str) -> str:
         return f"Error fetching time for timezone '{timezone}': {str(e)}"
 
 @tool
-def conversational_utterance(user_content:str)-> str:
-    """A tool that replies to a single casual query or message that does not require any other tool to be triggered.
-    Args:
-        user_content: the message or query such as 'Hi!', 'How are you?', 'What are you?', 'tell me a joke'.
+def conversational_utterance(user_content: str, additional_context: Optional[str]="") -> str:
     """
+    A tool that replies to a single casual query or message triggering any other tool is unfitted to reply.
+    
+    Args:
+        user_content: A string with the user's message or query (e.g., "Hi!", "How are you?", "Tell me a joke").
+        additional_context: An optional string with additional information (such as context, metadata, conversation history,
+            or instructions) to be passed as an 'assistant' turn (a thought) in the conversation. 
+    """
+    system_context_message = f"""
+        You are a highly intelligent, expert, and witty assistant who responds to user conversational messages.
+        You function as a tool activated by user intention via AI agents. In addition to your native LLM capabilities,
+        you have access to the following system tools that the user may leverage:
+        {tools}
+        You should mention these tools whenever relevant during the conversation.
+    """
+    
     messages = [
-      {"role": "user", "content": [{"type": "text", "text": user_content}]}
+        {"role": "system", "content": [{"type": "text", "text": system_context_message}]},
+        {"role": "assistant", "content": [{"type": "text", "text": f"(additional_context: {additional_context})"}]},
+        {"role": "user", "content": [{"type": "text", "text": user_content}]}
     ]
     return model(messages).content
 
@@ -103,10 +118,8 @@ custom_role_conversions=None,
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
-    
-agent = CodeAgent(
-    model=model,
-    tools=[
+
+tools = [
         final_answer, 
         prefered_web_search, 
         alternative_web_search,
@@ -116,7 +129,11 @@ agent = CodeAgent(
         image_generation_tool,
         language_detection,
         translation_tool
-    ],
+    ]
+
+agent = CodeAgent(
+    model=model,
+    tools=tools,
     max_steps=20,
     verbosity_level=1,
     grammar=None,
@@ -128,4 +145,4 @@ agent = CodeAgent(
 
 GradioUI(agent).launch()
 
-agent.push_to_hub('laverdes/agents-course-Alfredo')
+agent.push_to_hub('laverdes/Alfredo')
