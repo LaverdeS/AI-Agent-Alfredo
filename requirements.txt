@@ -7,3 +7,6 @@ transformers
 smolagents[transformers]
 torch
 pycountry
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+openinference-instrumentation-smolagents
