@@ -113,7 +113,7 @@ def initialize_langfuse_opentelemetry_instrumentation():
     
     SmolagentsInstrumentor().instrument(tracer_provider=trace_provider)
 
-initialize_langfuse_opentelemetry_instrumentation()
+# initialize_langfuse_opentelemetry_instrumentation()
 
 # tools from /tools/
 final_answer = FinalAnswerTool()
