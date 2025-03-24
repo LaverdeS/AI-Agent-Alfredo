@@ -127,3 +127,5 @@ agent = CodeAgent(
 )
 
 GradioUI(agent).launch()
+
+agent.push_to_hub('laverdes/Alfredo')
