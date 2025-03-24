@@ -10,9 +10,11 @@ pinned: false
 tags:
 - smolagents
 - agent
+- agents
 - smolagent
 - tool
 - agent-course
+- agents-course
 license: apache-2.0
 short_description: Alfredo is your AI agent!
 ---
