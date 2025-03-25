@@ -4,9 +4,18 @@ requests
 duckduckgo_search
 pandas
 transformers
-smolagents[transformers]
+# transformers[agents]
 torch
+langchain
+openai
+# accelerate
+langchain-community
+google-search-results
+smolagents[transformers]
+scikit-image
 pycountry
 opentelemetry-sdk
 opentelemetry-exporter-otlp
 openinference-instrumentation-smolagents
+python-dotenv
+langchain-openai
