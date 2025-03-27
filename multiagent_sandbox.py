@@ -1,11 +1,28 @@
+from e2b_code_interpreter import Sandbox
+
+secure_sandbox = Sandbox()
+
+secure_sandbox.commands.run("pip install smolagents")
+
+def run_code_raise_errors(secure_sandbox, code: str, verbose: bool = False) -> str:
+    execution = secure_sandbox.run_code(
+        code,
+        envs={'HF_TOKEN': os.getenv('HF_TOKEN')}
+    )
+    if execution.error:
+        execution_logs = "\n".join([str(log) for log in execution.logs.stdout])
+        logs = execution_logs
+        logs += execution.error.traceback
+        raise ValueError(logs)
+    return "\n".join([str(log) for log in execution.logs.stdout])
+
+alfredo_code = """
 import os
 import base64
 import math
 import pytz
 import yaml
 import pycountry
-import subprocess
-import sys
 
 from tools.final_answer import FinalAnswerTool
 from tools.visit_webpage import VisitWebpageTool
@@ -32,12 +49,6 @@ from langchain.chains import LLMChain
 from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import OpenAI
-
-from io import BytesIO
-from time import sleep
-
-from smolagents.agents import ActionStep
-from smolagents.cli import load_model
 from smolagents import (
     CodeAgent,
     DuckDuckGoSearchTool,
@@ -48,12 +59,13 @@ from smolagents import (
     load_tool,
     Tool,
     tool,
-    ToolCollection,
-    E2BExecutor
+    ToolCollection
 )
 
 # load .env vars
 load_dotenv()
+
+
 
 # fast prototyping tools
 @tool
@@ -171,25 +183,6 @@ def calculate_cargo_travel_time(
     return round(flight_time, 2)
 
 
-@tool
-def browser_automation(original_user_query:str)->str:
-    """
-    Browser automation is like “simulating a real user” and works for interactive,
-    dynamic sites and when visual navigation is required to show the process to the user.
-    Navigates the web using helium to answer a user query by appending helium_instructions to the original query
-    by searching for text matches through the navigation.
-    Args:
-        original_user_query: The original
-    """
-    # Use sys.executable to ensure the same Python interpreter is used.
-    result = subprocess.run(
-        [sys.executable, "vision_web_browser.py", original_user_query],
-        capture_output=True,  # Captures both stdout and stderr
-        text=True  # Returns output as a string instead of bytes
-    )
-    print("vision_web_browser.py: ", result.stderr)
-    return result.stdout
-
 # telemetry
 def initialize_langfuse_opentelemetry_instrumentation():
     LANGFUSE_PUBLIC_KEY=os.environ.get("LANGFUSE_PUBLIC_KEY")
@@ -232,7 +225,21 @@ image_generation_tool_fast = Tool.from_space(
 )
 
 
-ceo_model = load_model("LiteLLMModel", "gpt-4o")   # or anthropic/claude-3-sonnet
+# alternative hf inference endpoint
+"""
+model = HfApiModel(
+max_tokens=2096,  # 8096 for manager
+temperature=0.5,
+model_id='https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud',  # same as Qwen/Qwen2.5-Coder-32B-Instruct
+custom_role_conversions=None,
+)
+"""
+# also "deepseek-ai/DeepSeek-R1",  # and provider="together" (get API key)
+ceo_model = OpenAIServerModel(
+    max_tokens=8096,  # 2096 or 5000 for other ligher agents (depending on the task)
+    temperature=0.5,
+    model_id="gpt-4o"
+)
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
@@ -243,8 +250,7 @@ tools = [
         advanced_search_tool,
         google_web_search,
         duckduckgo_web_search,
-        visit_webpage,
-        browser_automation,
+        visit_webpage, 
         get_current_time_in_timezone,
         advanced_image_generation,
         image_generation_tool,
@@ -257,16 +263,13 @@ tools = [
 agent = CodeAgent(
     model=ceo_model,
     tools=tools,
-    max_steps=20,  # 15 is good for a light manager, too much when there is no need of a manager
+    max_steps=15,  # 15 is good for a light manager, too much when there is no need of a manager
     verbosity_level=2,
     grammar=None,
     planning_interval=5,  # (add more steps for heavier reasoning, leave default if not manager)
     name="Alfredo",
     description="CEO",
     prompt_templates=prompt_templates,
-    # executor_type="e2b",  # security, could also be "docker" (set keys)
-    # sandbox=E2BSandbox()  (or E2BExecutor?),
-    # step_callbacks=[save_screenshot],  # todo: configure the web_navigation agent as a separate agent and mangage it with alfred
     additional_authorized_imports=[
         "geopandas",
         "plotly",
@@ -274,19 +277,18 @@ agent = CodeAgent(
         "json",
         "pandas",
         "numpy",
-        "requests",
-        "helium",
+        "requests"
     ],
-    # I could also add the authorized_imports from a LIST_SAFE_MODULES
 )
-
-agent.python_executor("from helium import *")   # agent.state
 
 # agent.push_to_hub('laverdes/Alfredo')
 agent.visualize()
 
-# prompt = ("navigate to a random wikipedia page and give me a summary of the content, then make a single image representing all the content")
-# agent.run(prompt)
-
 GradioUI(agent).launch()
 #GradioUIImage(agent).launch()
+"""
+execution_logs = run_code_raise_errors(secure_sandbox, agent_code)
+print(execution_logs)
+
+# todo: clean errors
+# todo: the sandbox is to use in a single execution, not gradio and not receiving real-time user input()
