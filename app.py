@@ -2,10 +2,13 @@ import os
 import base64
 import math
 import pytz
+import torch
 import yaml
 import pycountry
 import subprocess
 import sys
+import numpy as np
+import sounddevice as sd
 
 from tools.final_answer import FinalAnswerTool
 from tools.visit_webpage import VisitWebpageTool
@@ -21,6 +24,7 @@ from datetime import datetime
 from skimage import io
 from PIL import Image
 from typing import Optional, Tuple
+from IPython.display import Audio, display
 
 from opentelemetry.sdk.trace import TracerProvider
 from openinference.instrumentation.smolagents import SmolagentsInstrumentor
@@ -190,7 +194,47 @@ def browser_automation(original_user_query:str)->str:
     print("vision_web_browser.py: ", result.stderr)
     return result.stdout
 
-# telemetry
+print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
+text_to_speech_pipe = pipeline(
+        "text-to-speech",
+        model="suno/bark-small",
+        device = 0 if torch.cuda.is_available() else "cpu",
+    )
+
+
+def speech_to_text(final_answer_text, agent_memory):
+    text = f"[clears throat] {final_answer_text}"
+    output = text_to_speech_pipe(text)
+    # display(Audio(output["audio"], rate=output["sampling_rate"]))  # notebook
+    audio = np.array(output["audio"], dtype=np.float32)
+    print("Original audio shape:", audio.shape)
+
+    # Adjust audio shape if necessary:
+    if audio.ndim == 1:
+        # Mono audio, should be fine. You can check if your device expects stereo.
+        print("Mono audio... should be fine. You can check if your device expects stereo.")
+    elif audio.ndim == 2:
+        # Check if the number of channels is acceptable (e.g., 1 or 2)
+        channels = audio.shape[1]
+        if channels not in [1, 2]:
+            # Try to squeeze extra dimensions
+            audio = np.squeeze(audio)
+            print("Squeezed audio shape:", audio.shape)
+    else:
+        # If audio has more dimensions than expected, flatten or reshape as needed
+        audio = np.squeeze(audio)
+        print("Squeezed audio shape:", audio.shape)
+
+    # Play the audio using sounddevice
+    try:
+        sd.play(audio, output["sampling_rate"])
+        sd.wait()  # Wait until audio playback is complete
+    except Exception as e:
+        print(f"Error playing audio: {e}")
+
+    return True
+
+
 def initialize_langfuse_opentelemetry_instrumentation():
     LANGFUSE_PUBLIC_KEY=os.environ.get("LANGFUSE_PUBLIC_KEY")
     LANGFUSE_SECRET_KEY=os.environ.get("LANGFUSE_SECRET_KEY")
@@ -204,6 +248,8 @@ def initialize_langfuse_opentelemetry_instrumentation():
     
     SmolagentsInstrumentor().instrument(tracer_provider=trace_provider)
 
+
+# telemetry
 initialize_langfuse_opentelemetry_instrumentation()
 
 # load tools from /tools/
@@ -232,7 +278,15 @@ image_generation_tool_fast = Tool.from_space(
 )
 
 
-ceo_model = load_model("LiteLLMModel", "gpt-4o")   # or anthropic/claude-3-sonnet
+# ceo_model = load_model("LiteLLMModel", "gpt-4o")   # or anthropic/claude-3-sonnet
+
+
+ceo_model = HfApiModel(
+max_tokens=2096,  # 8096 for manager
+temperature=0.5,
+model_id=  'https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud',  # "meta-llama/Llama-3.3-70B-Instruct",  # 'https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud',  # same as Qwen/Qwen2.5-Coder-32B-Instruct
+custom_role_conversions=None,
+)
 
 with open("prompts.yaml", 'r') as stream:
     prompt_templates = yaml.safe_load(stream)
@@ -260,13 +314,14 @@ agent = CodeAgent(
     max_steps=20,  # 15 is good for a light manager, too much when there is no need of a manager
     verbosity_level=2,
     grammar=None,
-    planning_interval=5,  # (add more steps for heavier reasoning, leave default if not manager)
+    # planning_interval=5,  # (add more steps for heavier reasoning, leave default if not manager)  # test for crashing issues.
     name="Alfredo",
     description="CEO",
     prompt_templates=prompt_templates,
     # executor_type="e2b",  # security, could also be "docker" (set keys)
     # sandbox=E2BSandbox()  (or E2BExecutor?),
-    # step_callbacks=[save_screenshot],  # todo: configure the web_navigation agent as a separate agent and mangage it with alfred
+    # step_callbacks=[save_screenshot],  # todo: configure the web_navigation agent as a separate agent and manage it with alfred
+    final_answer_checks=[speech_to_text],
     additional_authorized_imports=[
         "geopandas",
         "plotly",
