@@ -194,13 +194,15 @@ def browser_automation(original_user_query:str)->str:
     print("vision_web_browser.py: ", result.stderr)
     return result.stdout
 
-print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
-text_to_speech_pipe = pipeline(
-        "text-to-speech",
-        model="suno/bark-small",
-        device = 0 if torch.cuda.is_available() else "cpu",
-    )
 
+text_to_speech_pipe = pipeline(
+    task="text-to-speech",
+    model="suno/bark-small",
+    device = 0 if torch.cuda.is_available() else "cpu",
+    torch_dtype=torch.float16,
+    )
+text_to_speech_pipe.model.enable_cpu_offload()
+text_to_speech_pipe.model.use_flash_attention_2=True
 
 def speech_to_text(final_answer_text, agent_memory):
     text = f"[clears throat] {final_answer_text}"
